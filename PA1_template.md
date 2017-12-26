@@ -7,9 +7,7 @@ output:
         keep_md: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ## Introduction
 
@@ -19,7 +17,8 @@ This assignment makes use of data from a personal activity monitoring device. Th
 
 ## Loading the Data
 
-```{r readdata}
+
+```r
 unzip("activity.zip")
 data <- read.table("activity.csv",header=T, quote="\"", sep=",", na.strings="NA")
 ```
@@ -28,67 +27,80 @@ data <- read.table("activity.csv",header=T, quote="\"", sep=",", na.strings="NA"
 ## What is mean total number of steps taken per day?
 
 ### Histogram of steps per day
-```{r stepshistogram}
+
+```r
 stepsperday <- tapply(data$steps, data$date, sum, na.rm=TRUE)
 hist(stepsperday,xlab="Steps", main="Steps per Day")
 ```
 
+![](PA1_template_files/figure-html/stepshistogram-1.png)<!-- -->
+
 ### Median and mean steps per day
-```{r meanmediandailysteps}
+
+```r
 meanDailySteps <- mean(stepsperday)
 medianDailySteps <- median(stepsperday)
-
 ```
 
-The mean number of daily steps is `r meanDailySteps`.  
-The median number of daily steps is `r medianDailySteps`.
+The mean number of daily steps is 9354.2295082.  
+The median number of daily steps is 10395.
 
 
 ## What is the average daily activity pattern?
 
 ### Plot of mean daily steps by time interval
-```{r dailypattern}
+
+```r
 stepsByInterval <- aggregate(steps ~ interval, data=data,FUN="mean")
 plot(stepsByInterval$interval, stepsByInterval$steps, type="l", xlab="Interval",ylab="Steps",main="Mean steps by interval")
 ```
 
+![](PA1_template_files/figure-html/dailypattern-1.png)<!-- -->
+
 ### Which interval contains the maximum steps?
-```{r maxsteps}
+
+```r
 maxStepInterval <- stepsByInterval[which.max(stepsByInterval$steps),]
 ```
 
-The time interval with the maximum daily steps is `r maxStepInterval$interval`
+The time interval with the maximum daily steps is 835
 
 
 ## Imputing missing values
 
 ### Total Missing Values
-```{r nacount}
+
+```r
 nacount <- sum(is.na(data$steps))
 ```
 
-There are a total of `r nacount` rows with missing data for steps.
+There are a total of 2304 rows with missing data for steps.
 
 ### Impute the missing values and create new complete data set
-```{r imputeData, results="hide",cache=TRUE}
+
+```r
 library(mice)
 impData <- mice(data, maxit=10,method="norm.predict")
 completeData <- complete(impData,action=1)
 ```
 
 ### Histogram of complete daily total steps
-```{r completedailysteps}
+
+```r
 cstepsperday <- tapply(completeData$steps, completeData$date, sum, na.rm=TRUE)
 hist(cstepsperday,xlab="Steps", main="Steps per Day")
 ```
 
+![](PA1_template_files/figure-html/completedailysteps-1.png)<!-- -->
+
 ### Calculate mean and median for new data set
-```{r completemeanmedia}
+
+```r
 cmeanDailySteps <- round(mean(cstepsperday), digits=4)
 cmedianDailySteps <- median(cstepsperday)
 ```
 
-The mean daily steps for the complete data set is `r format(cmeanDailySteps, scientific=FALSE)` and the median is `r format(cmedianDailySteps, scientific=FALSE)`. Imputing the missing data using predictive linear regression has increased the mean and median daily steps.  
+The mean daily steps for the complete data set is 10716.97 and the median is 10395. Imputing the missing data using predictive linear regression has increased the mean and median daily steps.  
 
 I also tried a variety of other imputation methods and all increased the mean and median by similar amounts, so I opted to use this method instead of other methods which were more likely to preserve the mean and medians.
 
@@ -97,7 +109,8 @@ I also tried a variety of other imputation methods and all increased the mean an
 
 Use the timeDate library to create another factor column on the completeData indicating whether the day is a weekday or a weekend.
 
-```{r weekends}
+
+```r
 library(timeDate)
 completeData$date <- as.Date(completeData$date)
 completeData$day.type <- "weekday"
@@ -107,8 +120,11 @@ completeData$day.type <- as.factor(completeData$day.type)
 ```
 
 Now we can plot the steps by time interval separating weekdays and weekends.
-```{r weekendplot}
+
+```r
 library(ggplot2)
 cstepsByInterval <- aggregate(steps ~ interval + day.type, data=completeData,FUN="mean")
 ggplot(cstepsByInterval,aes(x= interval, y=steps)) + geom_line(color="steelblue") + facet_grid(day.type ~ .) + labs(x="Interval", y="Average Steps")
 ```
+
+![](PA1_template_files/figure-html/weekendplot-1.png)<!-- -->
